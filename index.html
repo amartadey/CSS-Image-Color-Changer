@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSS Image Color Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
+    <style>
+        .color-input-wrapper {
+            position: relative;
+        }
+        .color-preview {
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 min-h-screen p-8">
+    <div class="max-w-6xl mx-auto">
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-white mb-2 flex items-center justify-center gap-3">
+                <span class="iconify text-purple-400" data-icon="mdi:palette"></span>
+                CSS Image Color Generator
+            </h1>
+            <p class="text-gray-300">Upload an image and generate CSS filters to change its color</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Left Panel - Controls -->
+            <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
+                <h2 class="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+                    <span class="iconify" data-icon="mdi:cog"></span>
+                    Controls
+                </h2>
+
+                <!-- Upload Image -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-200 mb-2">Upload Image</label>
+                    <div class="relative">
+                        <input type="file" id="imageUpload" accept="image/*" class="hidden">
+                        <button onclick="document.getElementById('imageUpload').click()" 
+                                class="w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition">
+                            <span class="iconify" data-icon="mdi:upload"></span>
+                            Choose Image
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Color Picker -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-200 mb-2">Target Color</label>
+                    <div class="flex gap-3">
+                        <div class="color-input-wrapper flex-1 relative">
+                            <input type="color" id="colorPicker" value="#df011a" 
+                                   class="w-full h-12 rounded-lg cursor-pointer border-2 border-white/20">
+                        </div>
+                        <input type="text" id="colorHex" value="#df011a" 
+                               class="flex-1 bg-white/10 border border-white/20 text-white px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                    </div>
+                </div>
+
+                <!-- Generate Button -->
+                <button id="generateBtn" 
+                        class="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold py-3 px-6 rounded-lg flex items-center justify-center gap-2 transition mb-6 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <span class="iconify" data-icon="mdi:auto-fix"></span>
+                    Generate Filter
+                </button>
+
+                <!-- CSS Output -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-200 mb-2 flex items-center justify-between">
+                        <span>Generated CSS</span>
+                        <button id="copyBtn" class="text-purple-400 hover:text-purple-300 text-sm flex items-center gap-1">
+                            <span class="iconify" data-icon="mdi:content-copy"></span>
+                            Copy
+                        </button>
+                    </label>
+                    <div class="bg-slate-900 rounded-lg p-4 border border-white/10">
+                        <code id="cssOutput" class="text-green-400 text-xs break-all block">
+                            Upload an image and click Generate Filter
+                        </code>
+                    </div>
+                </div>
+
+                <!-- Loading -->
+                <div id="loading" class="hidden text-center text-purple-400">
+                    <span class="iconify animate-spin text-2xl" data-icon="mdi:loading"></span>
+                    <p class="text-sm mt-2">Calculating filters...</p>
+                </div>
+            </div>
+
+            <!-- Right Panel - Preview -->
+            <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
+                <h2 class="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+                    <span class="iconify" data-icon="mdi:image"></span>
+                    Preview
+                </h2>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <!-- Original -->
+                    <div>
+                        <h3 class="text-sm font-medium text-gray-300 mb-2">Original</h3>
+                        <div class="bg-white/5 rounded-lg p-4 border border-white/10 flex items-center justify-center min-h-[250px]">
+                            <img id="originalImage" src="" alt="Original" class="max-w-full max-h-[250px] hidden">
+                            <div id="originalPlaceholder" class="text-gray-500 text-center">
+                                <span class="iconify text-4xl mb-2" data-icon="mdi:image-off"></span>
+                                <p class="text-sm">No image uploaded</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Filtered -->
+                    <div>
+                        <h3 class="text-sm font-medium text-gray-300 mb-2">Filtered</h3>
+                        <div class="bg-white/5 rounded-lg p-4 border border-white/10 flex items-center justify-center min-h-[250px]">
+                            <img id="filteredImage" src="" alt="Filtered" class="max-w-full max-h-[250px] hidden">
+                            <div id="filteredPlaceholder" class="text-gray-500 text-center">
+                                <span class="iconify text-4xl mb-2" data-icon="mdi:image-off"></span>
+                                <p class="text-sm">Generate filter first</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Presets -->
+                <div class="mt-6">
+                    <h3 class="text-sm font-medium text-gray-200 mb-3">Quick Presets</h3>
+                    <div class="flex gap-2 flex-wrap">
+                        <button class="preset-btn" data-color="#df011a" style="background: #df011a;">Red</button>
+                        <button class="preset-btn" data-color="#7EB72B" style="background: #7EB72B;">Green</button>
+                        <button class="preset-btn" data-color="#F08D03" style="background: #F08D03;">Orange</button>
+                        <button class="preset-btn" data-color="#3B82F6" style="background: #3B82F6;">Blue</button>
+                        <button class="preset-btn" data-color="#8B5CF6" style="background: #8B5CF6;">Purple</button>
+                        <button class="preset-btn" data-color="#000000" style="background: #000000;">Black</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .preset-btn {
+            padding: 8px 16px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            font-size: 14px;
+            border: 2px solid rgba(255,255,255,0.2);
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .preset-btn:hover {
+            transform: scale(1.05);
+            border-color: rgba(255,255,255,0.5);
+        }
+    </style>
+
+    <script>
+        let currentImage = null;
+
+        // Color picker sync
+        const colorPicker = document.getElementById('colorPicker');
+        const colorHex = document.getElementById('colorHex');
+
+        colorPicker.addEventListener('input', (e) => {
+            colorHex.value = e.target.value;
+        });
+
+        colorHex.addEventListener('input', (e) => {
+            const hex = e.target.value;
+            if (/^#[0-9A-F]{6}$/i.test(hex)) {
+                colorPicker.value = hex;
+            }
+        });
+
+        // Image upload
+        document.getElementById('imageUpload').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    currentImage = event.target.result;
+                    const originalImage = document.getElementById('originalImage');
+                    originalImage.src = currentImage;
+                    originalImage.classList.remove('hidden');
+                    document.getElementById('originalPlaceholder').classList.add('hidden');
+                    
+                    const filteredImage = document.getElementById('filteredImage');
+                    filteredImage.src = currentImage;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Preset buttons
+        document.querySelectorAll('.preset-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const color = btn.dataset.color;
+                colorPicker.value = color;
+                colorHex.value = color;
+            });
+        });
+
+        // CSS Filter Generator
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : null;
+        }
+
+        class Color {
+            constructor(r, g, b) {
+                this.set(r, g, b);
+            }
+
+            toString() {
+                return `rgb(${Math.round(this.r)}, ${Math.round(this.g)}, ${Math.round(this.b)})`;
+            }
+
+            set(r, g, b) {
+                this.r = this.clamp(r);
+                this.g = this.clamp(g);
+                this.b = this.clamp(b);
+            }
+
+            hueRotate(angle = 0) {
+                angle = angle / 180 * Math.PI;
+                const sin = Math.sin(angle);
+                const cos = Math.cos(angle);
+
+                this.multiply([
+                    0.213 + cos * 0.787 - sin * 0.213,
+                    0.715 - cos * 0.715 - sin * 0.715,
+                    0.072 - cos * 0.072 + sin * 0.928,
+                    0.213 - cos * 0.213 + sin * 0.143,
+                    0.715 + cos * 0.285 + sin * 0.140,
+                    0.072 - cos * 0.072 - sin * 0.283,
+                    0.213 - cos * 0.213 - sin * 0.787,
+                    0.715 - cos * 0.715 + sin * 0.715,
+                    0.072 + cos * 0.928 + sin * 0.072,
+                ]);
+            }
+
+            grayscale(value = 1) {
+                this.multiply([
+                    0.2126 + 0.7874 * (1 - value),
+                    0.7152 - 0.7152 * (1 - value),
+                    0.0722 - 0.0722 * (1 - value),
+                    0.2126 - 0.2126 * (1 - value),
+                    0.7152 + 0.2848 * (1 - value),
+                    0.0722 - 0.0722 * (1 - value),
+                    0.2126 - 0.2126 * (1 - value),
+                    0.7152 - 0.7152 * (1 - value),
+                    0.0722 + 0.9278 * (1 - value),
+                ]);
+            }
+
+            sepia(value = 1) {
+                this.multiply([
+                    0.393 + 0.607 * (1 - value),
+                    0.769 - 0.769 * (1 - value),
+                    0.189 - 0.189 * (1 - value),
+                    0.349 - 0.349 * (1 - value),
+                    0.686 + 0.314 * (1 - value),
+                    0.168 - 0.168 * (1 - value),
+                    0.272 - 0.272 * (1 - value),
+                    0.534 - 0.534 * (1 - value),
+                    0.131 + 0.869 * (1 - value),
+                ]);
+            }
+
+            saturate(value = 1) {
+                this.multiply([
+                    0.213 + 0.787 * value,
+                    0.715 - 0.715 * value,
+                    0.072 - 0.072 * value,
+                    0.213 - 0.213 * value,
+                    0.715 + 0.285 * value,
+                    0.072 - 0.072 * value,
+                    0.213 - 0.213 * value,
+                    0.715 - 0.715 * value,
+                    0.072 + 0.928 * value,
+                ]);
+            }
+
+            multiply(matrix) {
+                const newR = this.clamp(this.r * matrix[0] + this.g * matrix[1] + this.b * matrix[2]);
+                const newG = this.clamp(this.r * matrix[3] + this.g * matrix[4] + this.b * matrix[5]);
+                const newB = this.clamp(this.r * matrix[6] + this.g * matrix[7] + this.b * matrix[8]);
+                this.r = newR;
+                this.g = newG;
+                this.b = newB;
+            }
+
+            brightness(value = 1) {
+                this.linear(value);
+            }
+
+            contrast(value = 1) {
+                this.linear(value, -(0.5 * value) + 0.5);
+            }
+
+            linear(slope = 1, intercept = 0) {
+                this.r = this.clamp(this.r * slope + intercept * 255);
+                this.g = this.clamp(this.g * slope + intercept * 255);
+                this.b = this.clamp(this.b * slope + intercept * 255);
+            }
+
+            invert(value = 1) {
+                this.r = this.clamp((value + this.r / 255 * (1 - 2 * value)) * 255);
+                this.g = this.clamp((value + this.g / 255 * (1 - 2 * value)) * 255);
+                this.b = this.clamp((value + this.b / 255 * (1 - 2 * value)) * 255);
+            }
+
+            clamp(value) {
+                return Math.max(0, Math.min(255, value));
+            }
+
+            loss(target) {
+                return Math.abs(this.r - target.r) + 
+                       Math.abs(this.g - target.g) + 
+                       Math.abs(this.b - target.b);
+            }
+        }
+
+        class Solver {
+            constructor(target) {
+                this.target = target;
+                this.targetHSL = this.rgb2hsl(target.r, target.g, target.b);
+            }
+
+            solve() {
+                const result = this.solveNarrow(this.solveWide());
+                return {
+                    values: result.values,
+                    loss: result.loss,
+                    filter: this.css(result.values)
+                };
+            }
+
+            solveWide() {
+                const A = 5;
+                const c = 15;
+                const a = [60, 180, 18000, 600, 1.2, 1.2];
+
+                let best = { loss: Infinity };
+                for (let i = 0; best.loss > 25 && i < 3; i++) {
+                    const initial = [50, 20, 3750, 50, 100, 100];
+                    const result = this.spsa(A, a, c, initial, 1000);
+                    if (result.loss < best.loss) {
+                        best = result;
+                    }
+                }
+                return best;
+            }
+
+            solveNarrow(wide) {
+                const A = wide.loss;
+                const c = 2;
+                const A1 = A + 1;
+                const a = [0.25 * A1, 0.25 * A1, A1, 0.25 * A1, 0.2 * A1, 0.2 * A1];
+                return this.spsa(A, a, c, wide.values, 500);
+            }
+
+            spsa(A, a, c, values, iters) {
+                const alpha = 1;
+                const gamma = 0.16666666666666666;
+
+                let best = null;
+                let bestLoss = Infinity;
+                const deltas = new Array(6);
+                const highArgs = new Array(6);
+                const lowArgs = new Array(6);
+
+                for (let k = 0; k < iters; k++) {
+                    const ck = c / Math.pow(k + 1, gamma);
+                    for (let i = 0; i < 6; i++) {
+                        deltas[i] = Math.random() > 0.5 ? 1 : -1;
+                        highArgs[i] = values[i] + ck * deltas[i];
+                        lowArgs[i] = values[i] - ck * deltas[i];
+                    }
+
+                    const lossDiff = this.loss(highArgs) - this.loss(lowArgs);
+                    for (let i = 0; i < 6; i++) {
+                        const g = lossDiff / (2 * ck) * deltas[i];
+                        const ak = a[i] / Math.pow(A + k + 1, alpha);
+                        values[i] = fix(values[i] - ak * g, i);
+                    }
+
+                    const loss = this.loss(values);
+                    if (loss < bestLoss) {
+                        best = values.slice(0);
+                        bestLoss = loss;
+                    }
+                }
+                return { values: best, loss: bestLoss };
+
+                function fix(value, idx) {
+                    let max = 100;
+                    if (idx === 2) max = 7500;
+                    else if (idx === 4 || idx === 5) max = 200;
+
+                    if (idx === 3) {
+                        if (value > max) value = value % max;
+                        else if (value < 0) value = max + value % max;
+                    } else if (value < 0) value = 0;
+                    else if (value > max) value = max;
+                    return value;
+                }
+            }
+
+            loss(filters) {
+                const color = new Color(0, 0, 0);
+                color.invert(filters[0] / 100);
+                color.sepia(filters[1] / 100);
+                color.saturate(filters[2] / 100);
+                color.hueRotate(filters[3] * 3.6);
+                color.brightness(filters[4] / 100);
+                color.contrast(filters[5] / 100);
+
+                const colorHSL = this.rgb2hsl(color.r, color.g, color.b);
+                return (
+                    Math.abs(color.r - this.target.r) +
+                    Math.abs(color.g - this.target.g) +
+                    Math.abs(color.b - this.target.b) +
+                    Math.abs(colorHSL.h - this.targetHSL.h) +
+                    Math.abs(colorHSL.s - this.targetHSL.s) +
+                    Math.abs(colorHSL.l - this.targetHSL.l)
+                );
+            }
+
+            css(filters) {
+                function fmt(idx, multiplier = 1) {
+                    return Math.round(filters[idx] * multiplier);
+                }
+                return `filter: invert(${fmt(0)}%) sepia(${fmt(1)}%) saturate(${fmt(2)}%) hue-rotate(${fmt(3, 3.6)}deg) brightness(${fmt(4)}%) contrast(${fmt(5)}%);`;
+            }
+
+            rgb2hsl(r, g, b) {
+                r /= 255;
+                g /= 255;
+                b /= 255;
+                const max = Math.max(r, g, b);
+                const min = Math.min(r, g, b);
+                let h, s, l = (max + min) / 2;
+
+                if (max === min) {
+                    h = s = 0;
+                } else {
+                    const d = max - min;
+                    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                    switch (max) {
+                        case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                        case g: h = (b - r) / d + 2; break;
+                        case b: h = (r - g) / d + 4; break;
+                    }
+                    h /= 6;
+                }
+
+                return { h: h * 100, s: s * 100, l: l * 100 };
+            }
+        }
+
+        // Generate button click
+        document.getElementById('generateBtn').addEventListener('click', () => {
+            if (!currentImage) {
+                alert('Please upload an image first!');
+                return;
+            }
+
+            const loading = document.getElementById('loading');
+            const generateBtn = document.getElementById('generateBtn');
+            const cssOutput = document.getElementById('cssOutput');
+
+            loading.classList.remove('hidden');
+            generateBtn.disabled = true;
+
+            setTimeout(() => {
+                const hex = colorHex.value;
+                const rgb = hexToRgb(hex);
+                const color = new Color(rgb.r, rgb.g, rgb.b);
+                const solver = new Solver(color);
+                const result = solver.solve();
+
+                cssOutput.textContent = result.filter;
+                
+                const filteredImage = document.getElementById('filteredImage');
+                filteredImage.src = currentImage;
+                filteredImage.style.filter = result.filter.replace('filter: ', '').replace(';', '');
+                filteredImage.classList.remove('hidden');
+                document.getElementById('filteredPlaceholder').classList.add('hidden');
+
+                loading.classList.add('hidden');
+                generateBtn.disabled = false;
+            }, 100);
+        });
+
+        // Copy button
+        document.getElementById('copyBtn').addEventListener('click', () => {
+            const cssOutput = document.getElementById('cssOutput');
+            navigator.clipboard.writeText(cssOutput.textContent).then(() => {
+                const copyBtn = document.getElementById('copyBtn');
+                const originalHTML = copyBtn.innerHTML;
+                copyBtn.innerHTML = '<span class="iconify" data-icon="mdi:check"></span> Copied!';
+                setTimeout(() => {
+                    copyBtn.innerHTML = originalHTML;
+                }, 2000);
+            });
+        });
+    </script>
+</body>
+</html>
